@@ -15,4 +15,9 @@ Data could be download from Google Drive: [Baby/Sports/Clothing](https://drive.g
 3. Enter the src folder and run with
 `python main.py -m DRAGON -d dataset_name`  
 ## The parameters to reproduce the result in our paper
+| Datasets | learning rate | reg weight |
+|----------|--------|---------|
+| Baby     | 0.0001      | 0.001     |
+| Sports   | 0.0001      | 0.001     |
+| Clothing     | 0.0001      | 0.1     |
 
