@@ -8,8 +8,11 @@ Pytorch implementation for "Enhancing Dyadic Relations with Homogeneous Graphs f
 </p>
 
 ## Data
-
+Data could be download from Google Drive: [Baby/Sports/Clothing](https://drive.google.com/drive/folders/1eIrFm4ZqMI9poun9fdxrRZUcGdGyBujp?usp=sharing)  
 ## Run the code
-
+1. Download the data from the data link we provided above, then put the download data to the ./data folder
+2. Run generate-u-u-matrix.py on the dataset you want to generate the user co-occurrence graph
+3. Enter the src folder and run with
+`python main.py -m DRAGON -d dataset_name`  
 ## The parameters to reproduce the result in our paper
 
