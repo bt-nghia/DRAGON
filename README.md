@@ -4,7 +4,7 @@ Pytorch implementation for "Enhancing Dyadic Relations with Homogeneous Graphs f
 
 ## Overview of DRAGON
 <p>
-<img src="./images/structure.pdf" width="800">
+<img src="https://github.com/hongyurain/DRAGON/blob/main/images/structure.jpg" width="800">
 </p>
 
 ## Data
