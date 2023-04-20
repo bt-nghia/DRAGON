@@ -51,17 +51,27 @@ if __name__ == 	'__main__':
 
     config = {}
     cur_dir = os.getcwd()
-    con_dir = os.path.join(os.path.dirname(cur_dir), 'configs') # get config dir
+    con_dir = os.path.join(os.path.dirname(cur_dir), 'DRAGON\configs') # get config dir
     overall_config_file = os.path.join(con_dir, "overall.yaml")
     dataset_config_file = os.path.join(con_dir, "dataset", "{}.yaml".format(dataset_name))
     conf_files = [overall_config_file, dataset_config_file]
     # load configs
+
+    print(overall_config_file)
+    print(dataset_config_file)
+
     for file in conf_files:
+        print('file', file)
         if os.path.isfile(file):
             with open(file, 'r', encoding='utf-8') as f:
                 tmp_d = yaml.safe_load(f)
+                print(f)
+                print(tmp_d)
                 config.update(tmp_d)
-
+        print('config', config)
+    # print('config',config)
+    print(dataset_name)
+    print('data_path', config['data_path'])
     dataset_path = os.path.abspath('../' + config['data_path'] + dataset_name)
     uid_field = config['USER_ID_FIELD']
     iid_field = config['ITEM_ID_FIELD']
