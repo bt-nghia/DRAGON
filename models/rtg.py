@@ -24,7 +24,7 @@ class RTG(GeneralRecommender):
 
         num_user = self.n_users
         num_item = self.n_items
-        batch_size = config['train_batch_size']         # not used
+        batch_size = config['train_batch_size']  # not used
         dim_x = config['embedding_size']
         self.feat_embed_dim = config['feat_embed_dim']
         self.n_layers = config['n_mm_layers']
@@ -41,7 +41,7 @@ class RTG(GeneralRecommender):
         self.num_layer = 1
         self.cold_start = 0
         self.dataset = dataset
-        #self.construction = 'weighted_max'
+        # self.construction = 'weighted_max'
         self.construction = 'cat'
         self.reg_weight = config['reg_weight']
         self.drop_rate = 0.1
@@ -56,8 +56,9 @@ class RTG(GeneralRecommender):
         self.mm_adj = None
 
         dataset_path = os.path.abspath(config['data_path'] + config['dataset'])
-        self.user_graph_dict = np.load(os.path.join(dataset_path, config['user_graph_dict_file']), allow_pickle=True).item()
-        
+        self.user_graph_dict = np.load(os.path.join(dataset_path, config['user_graph_dict_file']),
+                                       allow_pickle=True).item()
+
         mm_adj_file = os.path.join(dataset_path, 'mm_adj_{}.pt'.format(self.knn_k))
 
         if self.v_feat is not None:
@@ -142,17 +143,22 @@ class RTG(GeneralRecommender):
         if self.v_feat is not None:
             self.v_drop_ze = torch.zeros(len(self.dropv_node_idx), self.v_feat.size(1)).to(self.device)
             self.v_gcn = GCN(self.dataset, batch_size, num_user, num_item, dim_x, self.aggr_mode,
-                         num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
-                         device=self.device, features=self.v_feat)  # 256)
+                             num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
+                             device=self.device, features=self.v_feat)  # 256)
         if self.t_feat is not None:
             self.t_drop_ze = torch.zeros(len(self.dropt_node_idx), self.t_feat.size(1)).to(self.device)
             self.t_gcn = GCN(self.dataset, batch_size, num_user, num_item, dim_x, self.aggr_mode,
-                         num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
-                         device=self.device, features=self.t_feat)
+                             num_layer=self.num_layer, has_id=has_id, dropout=self.drop_rate, dim_latent=64,
+                             device=self.device, features=self.t_feat)
 
         self.user_graph = User_Graph_sample(num_user, 'add', self.dim_latent)
 
-        self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
+<<<<<<< HEAD
+        # self.result_embed = nn.Parameter(
+            # nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
+=======
+#         self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
+>>>>>>> 6899f06430c0b6f0aad913da5a54ebfc2d974e6f
 
     def get_knn_adj_mat(self, mm_embeddings):
         context_norm = mm_embeddings.div(torch.norm(mm_embeddings, p=2, dim=-1, keepdim=True))
@@ -167,7 +173,7 @@ class RTG(GeneralRecommender):
         indices = torch.stack((torch.flatten(indices0), torch.flatten(knn_ind)), 0)
         # norm
         return indices, self.compute_normalized_laplacian(indices, adj_size)
-    
+
     def compute_normalized_laplacian(self, indices, adj_size):
         adj = torch.sparse.FloatTensor(indices, torch.ones_like(indices[0]), adj_size)
         row_sum = 1e-7 + torch.sparse.sum(adj, -1).to_dense()
@@ -177,7 +183,6 @@ class RTG(GeneralRecommender):
         values = rows_inv_sqrt * cols_inv_sqrt
         return torch.sparse.FloatTensor(indices, values, adj_size)
 
-    
     def pre_epoch_processing(self):
         self.epoch_user_graph, self.user_weight_matrix = self.topk_sample(self.k)
         self.user_weight_matrix = self.user_weight_matrix.to(self.device)
@@ -195,9 +200,11 @@ class RTG(GeneralRecommender):
         representation = None
 
         if self.v_feat is not None:
+            # print('v_feat.shape: ', self.v_feat.shape)
             self.v_rep, self.v_preference = self.v_gcn(self.edge_index_dropv, self.edge_index, self.v_feat)
             representation = self.v_rep
         if self.t_feat is not None:
+            # print('t_feat.shape: ', self.t_feat.shape)
             self.t_rep, self.t_preference = self.t_gcn(self.edge_index_dropt, self.edge_index, self.t_feat)
             if representation is None:
                 representation = self.t_rep
@@ -207,8 +214,10 @@ class RTG(GeneralRecommender):
                 else:
                     representation += self.t_rep
 
-
+        # print('users:', self.num_user)
+        # print('items:', self.num_item)
         if self.construction == 'weighted_sum':
+            # print('weighted_sum')
             if self.v_rep is not None:
                 self.v_rep = torch.unsqueeze(self.v_rep, 2)
                 user_rep = self.v_rep[:self.num_user]
@@ -216,33 +225,36 @@ class RTG(GeneralRecommender):
                 self.t_rep = torch.unsqueeze(self.t_rep, 2)
                 user_rep = self.t_rep[:self.num_user]
             if self.v_rep is not None and self.t_rep is not None:
-                
                 user_rep = torch.matmul(torch.cat((self.v_rep[:self.num_user], self.t_rep[:self.num_user]), dim=2),
                                         self.weight_u)
             user_rep = torch.squeeze(user_rep)
 
         if self.construction == 'weighted_max':
+            # print('weighted_max')
             # pdb.set_trace()
             self.v_rep = torch.unsqueeze(self.v_rep, 2)
-            
+
             self.t_rep = torch.unsqueeze(self.t_rep, 2)
-            
+
             user_rep = torch.cat((self.v_rep[:self.num_user], self.t_rep[:self.num_user]), dim=2)
-            user_rep = self.weight_u.transpose(1,2)*user_rep
-            user_rep = torch.max(user_rep,dim=2).values
+            user_rep = self.weight_u.transpose(1, 2) * user_rep
+            user_rep = torch.max(user_rep, dim=2).values
         if self.construction == 'cat':
+            # print('cat')
             # pdb.set_trace()
             if self.v_rep is not None:
                 user_rep = self.v_rep[:self.num_user]
             if self.t_rep is not None:
                 user_rep = self.t_rep[:self.num_user]
             if self.v_rep is not None and self.t_rep is not None:
+                # print('1:', self.v_rep[:self.num_user].shape)
+                # print('2:', self.t_rep[:self.num_user].shape)
                 self.v_rep = torch.unsqueeze(self.v_rep, 2)
                 self.t_rep = torch.unsqueeze(self.t_rep, 2)
                 user_rep = torch.cat((self.v_rep[:self.num_user], self.t_rep[:self.num_user]), dim=2)
-                user_rep = self.weight_u.transpose(1,2)*user_rep
+                user_rep = self.weight_u.transpose(1, 2) * user_rep
 
-                user_rep = torch.cat((user_rep[:,:,0], user_rep[:,:,1]), dim=1)
+                user_rep = torch.cat((user_rep[:, :, 0], user_rep[:, :, 1]), dim=1)
 
         item_rep = representation[self.num_user:]
 
@@ -251,9 +263,10 @@ class RTG(GeneralRecommender):
         for i in range(self.n_layers):
             h = torch.sparse.mm(self.mm_adj, h)
         h_u1 = self.user_graph(user_rep, self.epoch_user_graph, self.user_weight_matrix)
-        user_rep = user_rep + h_u1
+        # z_u, z_i
+        user_rep = user_rep + h_u1  # user_rep ~ u_f after multimodal representation step
         item_rep = item_rep + h
-        self.result_embed = nn.Parameter(torch.cat((user_rep, item_rep), dim=0))
+        self.result_embed = torch.cat((user_rep, item_rep), dim=0)
         user_tensor = self.result_embed[user_nodes]
         pos_item_tensor = self.result_embed[pos_item_nodes]
         neg_item_tensor = self.result_embed[neg_item_nodes]
@@ -308,7 +321,6 @@ class RTG(GeneralRecommender):
                     user_graph_weight.append(user_graph_weight[rand_index])
                 user_graph_index.append(user_graph_sample)
 
-
                 if self.user_aggr_mode == 'softmax':
                     user_weight_matrix[i] = F.softmax(torch.tensor(user_graph_weight), dim=0)  # softmax
                 if self.user_aggr_mode == 'mean':
@@ -326,26 +338,27 @@ class RTG(GeneralRecommender):
         # pdb.set_trace()
         return user_graph_index, user_weight_matrix
 
+
 class User_Graph_sample(torch.nn.Module):
-    def __init__(self, num_user, aggr_mode,dim_latent):
+    def __init__(self, num_user, aggr_mode, dim_latent):
         super(User_Graph_sample, self).__init__()
         self.num_user = num_user
         self.dim_latent = dim_latent
         self.aggr_mode = aggr_mode
 
-    def forward(self, features,user_graph,user_matrix):
+    def forward(self, features, user_graph, user_matrix):
         index = user_graph
         u_features = features[index]
         user_matrix = user_matrix.unsqueeze(1)
         # pdb.set_trace()
-        u_pre = torch.matmul(user_matrix,u_features)
+        u_pre = torch.matmul(user_matrix, u_features)
         u_pre = u_pre.squeeze()
         return u_pre
 
 
 class GCN(torch.nn.Module):
-    def __init__(self,datasets, batch_size, num_user, num_item, dim_id, aggr_mode, num_layer, has_id, dropout,
-                 dim_latent=None,device = None,features=None):
+    def __init__(self, datasets, batch_size, num_user, num_item, dim_id, aggr_mode, num_layer, has_id, dropout,
+                 dim_latent=None, device=None, features=None):
         super(GCN, self).__init__()
         self.batch_size = batch_size
         self.num_user = num_user
@@ -364,8 +377,8 @@ class GCN(torch.nn.Module):
             self.preference = nn.Parameter(nn.init.xavier_normal_(torch.tensor(
                 np.random.randn(num_user, self.dim_latent), dtype=torch.float32, requires_grad=True),
                 gain=1).to(self.device))
-            self.MLP = nn.Linear(self.dim_feat, 4*self.dim_latent)
-            self.MLP_1 = nn.Linear(4*self.dim_latent, self.dim_latent)
+            self.MLP = nn.Linear(self.dim_feat, 4 * self.dim_latent)
+            self.MLP_1 = nn.Linear(4 * self.dim_latent, self.dim_latent)
             self.conv_embed_1 = Base_gcn(self.dim_latent, self.dim_latent, aggr=self.aggr_mode)
 
         else:
@@ -374,14 +387,19 @@ class GCN(torch.nn.Module):
                 gain=1).to(self.device))
             self.conv_embed_1 = Base_gcn(self.dim_latent, self.dim_latent, aggr=self.aggr_mode)
 
-    def forward(self, edge_index_drop,edge_index,features):
+    def forward(self, edge_index_drop, edge_index, features):
+        # print('dim_latent', self.dim_latent)
+        # print('num_user', self.num_user)
+        # print('dim_feat', self.dim_feat)
         temp_features = self.MLP_1(F.leaky_relu(self.MLP(features))) if self.dim_latent else features
+        # print('prefernce', self.preference.shape, 'temp_feat', temp_features.shape)
         x = torch.cat((self.preference, temp_features), dim=0).to(self.device)
         x = F.normalize(x).to(self.device)
         h = self.conv_embed_1(x, edge_index)  # equation 1
         h_1 = self.conv_embed_1(h, edge_index)
 
-        x_hat =h + x +h_1
+        x_hat = h + x + h_1
+        # print('x_hat.shape', x_hat.shape)
         return x_hat, self.preference
 
 
@@ -416,5 +434,3 @@ class Base_gcn(MessagePassing):
 
     def __repr(self):
         return '{}({},{})'.format(self.__class__.__name__, self.in_channels, self.out_channels)
-
-
