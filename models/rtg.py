@@ -153,12 +153,8 @@ class RTG(GeneralRecommender):
 
         self.user_graph = User_Graph_sample(num_user, 'add', self.dim_latent)
 
-<<<<<<< HEAD
         # self.result_embed = nn.Parameter(
             # nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
-=======
-#         self.result_embed = nn.Parameter(nn.init.xavier_normal_(torch.tensor(np.random.randn(num_user + num_item, dim_x)))).to(self.device)
->>>>>>> 6899f06430c0b6f0aad913da5a54ebfc2d974e6f
 
     def get_knn_adj_mat(self, mm_embeddings):
         context_norm = mm_embeddings.div(torch.norm(mm_embeddings, p=2, dim=-1, keepdim=True))
